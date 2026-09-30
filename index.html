@@ -702,10 +702,22 @@
 
   /* ============================ Sound engine ============================ */
   let audioCtx = null;
+  let masterBus = null;
 
   function ensureAudioContext() {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     if (audioCtx.state === "suspended") audioCtx.resume();
+    if (!masterBus) {
+      // soft limiter so overlapping notes/effects never clip into harsh distortion
+      const compressor = audioCtx.createDynamicsCompressor();
+      compressor.threshold.setValueAtTime(-24, audioCtx.currentTime);
+      compressor.knee.setValueAtTime(24, audioCtx.currentTime);
+      compressor.ratio.setValueAtTime(4, audioCtx.currentTime);
+      compressor.attack.setValueAtTime(0.003, audioCtx.currentTime);
+      compressor.release.setValueAtTime(0.25, audioCtx.currentTime);
+      compressor.connect(audioCtx.destination);
+      masterBus = compressor;
+    }
     return audioCtx;
   }
 
@@ -720,7 +732,7 @@
     if (freqEnd != null) osc.frequency.exponentialRampToValueAtTime(Math.max(freqEnd, 1), t0 + duration);
     gain.gain.setValueAtTime(volume, t0);
     gain.gain.exponentialRampToValueAtTime(0.001, t0 + duration);
-    osc.connect(gain).connect(ctx.destination);
+    osc.connect(gain).connect(masterBus);
     osc.start(t0);
     osc.stop(t0 + duration + 0.02);
   }
@@ -737,7 +749,7 @@
     const gain = ctx.createGain();
     gain.gain.setValueAtTime(volume, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
-    noise.connect(gain).connect(ctx.destination);
+    noise.connect(gain).connect(masterBus);
     noise.start();
   }
 
@@ -757,17 +769,21 @@
   }
 
   /* ---------- Background music ---------- */
+  // Notes are scheduled ahead of time on the audio clock (not via setTimeout) so playback
+  // stays glitch-free even when the main thread is busy running the arcade animation loop.
   const MUSIC_PATTERN = [ // a gentle looping arpeggio, notes overlap softly like an ambient pad
     523.25, 659.25, 783.99, 659.25, 493.88, 587.33, 698.46, 587.33
   ];
-  const MUSIC_NOTE_INTERVAL_MS = 900;
+  const MUSIC_NOTE_INTERVAL_S = 0.9;
   const MUSIC_NOTE_DURATION_S = 1.6;
-  let musicTimer = null;
+  const MUSIC_SCHEDULE_AHEAD_S = 0.75;
+  const MUSIC_LOOKAHEAD_MS = 200;
+  let musicSchedulerTimer = null;
   let musicStep = 0;
+  let musicNextNoteTime = 0;
 
-  function playMusicNote(freq) {
+  function playMusicNote(freq, t0) {
     const ctx = ensureAudioContext();
-    const t0 = ctx.currentTime;
     [{ type: "sine", freq, gain: 0.05 }, { type: "triangle", freq: freq / 2, gain: 0.025 }].forEach((layer) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
@@ -776,28 +792,33 @@
       gain.gain.setValueAtTime(0, t0);
       gain.gain.linearRampToValueAtTime(layer.gain, t0 + 0.3);
       gain.gain.linearRampToValueAtTime(0, t0 + MUSIC_NOTE_DURATION_S);
-      osc.connect(gain).connect(ctx.destination);
+      osc.connect(gain).connect(masterBus);
       osc.start(t0);
       osc.stop(t0 + MUSIC_NOTE_DURATION_S + 0.05);
     });
   }
 
-  function scheduleMusicStep() {
+  function scheduleMusicIfNeeded() {
     if (!musicEnabled) return;
-    playMusicNote(MUSIC_PATTERN[musicStep % MUSIC_PATTERN.length]);
-    musicStep++;
-    musicTimer = setTimeout(scheduleMusicStep, MUSIC_NOTE_INTERVAL_MS);
+    const ctx = ensureAudioContext();
+    while (musicNextNoteTime < ctx.currentTime + MUSIC_SCHEDULE_AHEAD_S) {
+      playMusicNote(MUSIC_PATTERN[musicStep % MUSIC_PATTERN.length], musicNextNoteTime);
+      musicNextNoteTime += MUSIC_NOTE_INTERVAL_S;
+      musicStep++;
+    }
   }
 
   function startMusic() {
-    if (musicTimer || !musicEnabled) return;
-    ensureAudioContext();
-    scheduleMusicStep();
+    if (musicSchedulerTimer || !musicEnabled) return;
+    const ctx = ensureAudioContext();
+    musicNextNoteTime = ctx.currentTime + 0.1;
+    scheduleMusicIfNeeded();
+    musicSchedulerTimer = setInterval(scheduleMusicIfNeeded, MUSIC_LOOKAHEAD_MS);
   }
 
   function stopMusic() {
-    if (musicTimer) clearTimeout(musicTimer);
-    musicTimer = null;
+    if (musicSchedulerTimer) clearInterval(musicSchedulerTimer);
+    musicSchedulerTimer = null;
   }
 
   function unlockAudioOnce() {
