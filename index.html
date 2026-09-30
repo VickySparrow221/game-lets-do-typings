@@ -493,6 +493,9 @@
       <button class="icon-btn" id="soundToggle" title="Toggle sound effects">🔊</button>
     </div>
     <div class="group">
+      <button class="icon-btn" id="musicToggle" title="Toggle background music">🎵</button>
+    </div>
+    <div class="group">
       <button class="icon-btn" id="themeToggle" title="Toggle theme">🌙</button>
     </div>
   </section>
@@ -643,6 +646,7 @@
   let screen = "home"; // 'home' | 'classic' | 'arcade'
   let gameStyle = "classic"; // 'classic' | 'arcade'
   let soundEnabled = true;
+  let musicEnabled = true;
   let session = null;
   let arcade = null;
   let timerInterval = null;
@@ -694,6 +698,7 @@
   const arcadeSpeedSlider = $("arcadeSpeedSlider");
   const arcadeSpeedValue = $("arcadeSpeedValue");
   const soundToggle = $("soundToggle");
+  const musicToggle = $("musicToggle");
 
   /* ============================ Sound engine ============================ */
   let audioCtx = null;
@@ -750,6 +755,59 @@
   function playGameOverSound() {
     [660, 550, 440, 330].forEach((freq, i) => playTone({ freq, duration: 0.22, type: "sawtooth", volume: 0.25, delay: i * 0.12 }));
   }
+
+  /* ---------- Background music ---------- */
+  const MUSIC_PATTERN = [ // a gentle looping arpeggio, notes overlap softly like an ambient pad
+    523.25, 659.25, 783.99, 659.25, 493.88, 587.33, 698.46, 587.33
+  ];
+  const MUSIC_NOTE_INTERVAL_MS = 900;
+  const MUSIC_NOTE_DURATION_S = 1.6;
+  let musicTimer = null;
+  let musicStep = 0;
+
+  function playMusicNote(freq) {
+    const ctx = ensureAudioContext();
+    const t0 = ctx.currentTime;
+    [{ type: "sine", freq, gain: 0.05 }, { type: "triangle", freq: freq / 2, gain: 0.025 }].forEach((layer) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = layer.type;
+      osc.frequency.setValueAtTime(layer.freq, t0);
+      gain.gain.setValueAtTime(0, t0);
+      gain.gain.linearRampToValueAtTime(layer.gain, t0 + 0.3);
+      gain.gain.linearRampToValueAtTime(0, t0 + MUSIC_NOTE_DURATION_S);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(t0);
+      osc.stop(t0 + MUSIC_NOTE_DURATION_S + 0.05);
+    });
+  }
+
+  function scheduleMusicStep() {
+    if (!musicEnabled) return;
+    playMusicNote(MUSIC_PATTERN[musicStep % MUSIC_PATTERN.length]);
+    musicStep++;
+    musicTimer = setTimeout(scheduleMusicStep, MUSIC_NOTE_INTERVAL_MS);
+  }
+
+  function startMusic() {
+    if (musicTimer || !musicEnabled) return;
+    ensureAudioContext();
+    scheduleMusicStep();
+  }
+
+  function stopMusic() {
+    if (musicTimer) clearTimeout(musicTimer);
+    musicTimer = null;
+  }
+
+  function unlockAudioOnce() {
+    ensureAudioContext();
+    if (musicEnabled) startMusic();
+    window.removeEventListener("pointerdown", unlockAudioOnce);
+    window.removeEventListener("keydown", unlockAudioOnce);
+  }
+  window.addEventListener("pointerdown", unlockAudioOnce);
+  window.addEventListener("keydown", unlockAudioOnce);
 
   /* ============================ Keyboard rendering ============================ */
   function keyLabel(keyId) {
@@ -1391,6 +1449,13 @@
   soundToggle.addEventListener("click", () => {
     soundEnabled = !soundEnabled;
     soundToggle.textContent = soundEnabled ? "🔊" : "🔇";
+  });
+
+  musicToggle.addEventListener("click", () => {
+    musicEnabled = !musicEnabled;
+    musicToggle.textContent = musicEnabled ? "🎵" : "🔇";
+    if (musicEnabled) startMusic();
+    else stopMusic();
   });
 
   arcadeSpeedSlider.addEventListener("input", () => {
