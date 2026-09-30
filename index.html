@@ -490,6 +490,9 @@
       <input type="range" id="glowSlider" min="100" max="1000" step="50" value="300">
     </div>
     <div class="group">
+      <button class="icon-btn" id="soundToggle" title="Toggle sound effects">🔊</button>
+    </div>
+    <div class="group">
       <button class="icon-btn" id="themeToggle" title="Toggle theme">🌙</button>
     </div>
   </section>
@@ -639,6 +642,7 @@
   let source = "pool"; // 'pool' | 'custom'
   let screen = "home"; // 'home' | 'classic' | 'arcade'
   let gameStyle = "classic"; // 'classic' | 'arcade'
+  let soundEnabled = true;
   let session = null;
   let arcade = null;
   let timerInterval = null;
@@ -689,6 +693,63 @@
   const arcadeHomeBtn = $("arcadeHomeBtn");
   const arcadeSpeedSlider = $("arcadeSpeedSlider");
   const arcadeSpeedValue = $("arcadeSpeedValue");
+  const soundToggle = $("soundToggle");
+
+  /* ============================ Sound engine ============================ */
+  let audioCtx = null;
+
+  function ensureAudioContext() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    return audioCtx;
+  }
+
+  function playTone({ freq = 440, freqEnd = null, duration = 0.12, type = "sine", volume = 0.3, delay = 0 } = {}) {
+    if (!soundEnabled) return;
+    const ctx = ensureAudioContext();
+    const t0 = ctx.currentTime + delay;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t0);
+    if (freqEnd != null) osc.frequency.exponentialRampToValueAtTime(Math.max(freqEnd, 1), t0 + duration);
+    gain.gain.setValueAtTime(volume, t0);
+    gain.gain.exponentialRampToValueAtTime(0.001, t0 + duration);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(t0);
+    osc.stop(t0 + duration + 0.02);
+  }
+
+  function playNoiseBurst(duration = 0.18, volume = 0.25) {
+    if (!soundEnabled) return;
+    const ctx = ensureAudioContext();
+    const bufferSize = Math.floor(ctx.sampleRate * duration);
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(volume, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    noise.connect(gain).connect(ctx.destination);
+    noise.start();
+  }
+
+  function playCorrectSound() { playTone({ freq: 720, duration: 0.07, type: "sine", volume: 0.25 }); }
+  function playErrorSound() { playTone({ freq: 160, freqEnd: 80, duration: 0.16, type: "sawtooth", volume: 0.25 }); }
+  function playClickSound() { playTone({ freq: 500, duration: 0.05, type: "square", volume: 0.12 }); }
+  function playMissSound() { playTone({ freq: 220, freqEnd: 60, duration: 0.3, type: "triangle", volume: 0.28 }); }
+  function playExplodeSound() {
+    playTone({ freq: 900, freqEnd: 120, duration: 0.22, type: "square", volume: 0.3 });
+    playNoiseBurst(0.16, 0.22);
+  }
+  function playCompleteSound() {
+    [523, 659, 784, 1046].forEach((freq, i) => playTone({ freq, duration: 0.16, type: "sine", volume: 0.28, delay: i * 0.09 }));
+  }
+  function playGameOverSound() {
+    [660, 550, 440, 330].forEach((freq, i) => playTone({ freq, duration: 0.22, type: "sawtooth", volume: 0.25, delay: i * 0.12 }));
+  }
 
   /* ============================ Keyboard rendering ============================ */
   function keyLabel(keyId) {
@@ -951,6 +1012,7 @@
     resultBannerEl.textContent = `🎉 Completed! ${statSpeedLabel.textContent}: ${statSpeed.textContent} · Accuracy: ${statAccuracy.textContent} · Time: ${statTime.textContent}`;
     pauseBtn.disabled = true;
     setNextKeyHighlight(null);
+    playCompleteSound();
   }
 
   function togglePause() {
@@ -995,10 +1057,12 @@
         updateHighlight();
         updateStats();
         if (session.pointer >= session.units.length) finishSession();
+        else playCorrectSound();
       } else {
         session.incorrect++;
         flashError();
         updateStats();
+        playErrorSound();
       }
     } else if (screen === "arcade") {
       if (!arcade || !arcade.running || arcade.paused) return;
@@ -1097,6 +1161,7 @@
     if (unit) flashWrongKey(unit.expectedKey);
     word.el.classList.add("shake");
     setTimeout(() => word.el.classList.remove("shake"), 200);
+    playErrorSound();
   }
 
   function releaseLock(word) {
@@ -1115,6 +1180,7 @@
     word.el.classList.add("exploding");
     setTimeout(() => word.el.remove(), 340);
     updateArcadeStatsDisplay();
+    playExplodeSound();
   }
 
   function markMissed(word) {
@@ -1125,6 +1191,7 @@
     word.el.classList.add("missed");
     setTimeout(() => word.el.remove(), 320);
     updateArcadeStatsDisplay();
+    playMissSound();
     if (arcade.lives <= 0) gameOverArcade();
   }
 
@@ -1144,6 +1211,7 @@
       word.pointer++;
       updateWordVisual(word);
       if (word.pointer >= word.units.length) destroyWord(word);
+      else playCorrectSound();
     } else {
       flashWordError(word);
     }
@@ -1241,6 +1309,7 @@
     arcadeGameOverEl.style.display = "flex";
     arcadePauseBtn.disabled = true;
     updateArcadeStatsDisplay();
+    playGameOverSound();
   }
 
   /* ============================ Screen switching ============================ */
@@ -1296,6 +1365,7 @@
   }
 
   document.body.addEventListener("click", (e) => {
+    if (e.target.closest("button")) playClickSound();
     const modeBtn = e.target.closest("button[data-mode]");
     if (modeBtn) { setMode(modeBtn.dataset.mode); return; }
     const diffBtn = e.target.closest("button[data-difficulty]");
@@ -1316,6 +1386,11 @@
     const next = html.dataset.theme === "dark" ? "light" : "dark";
     html.dataset.theme = next;
     themeToggle.textContent = next === "dark" ? "🌙" : "☀️";
+  });
+
+  soundToggle.addEventListener("click", () => {
+    soundEnabled = !soundEnabled;
+    soundToggle.textContent = soundEnabled ? "🔊" : "🔇";
   });
 
   arcadeSpeedSlider.addEventListener("input", () => {
