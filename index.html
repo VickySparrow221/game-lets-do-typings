@@ -368,12 +368,25 @@
       </div>
     </div>
     <div class="group">
+      <label>Source</label>
+      <div class="segmented" id="sourceSwitch">
+        <button data-source="pool" class="active">Practice Pool</button>
+        <button data-source="custom">My Article</button>
+      </div>
+    </div>
+    <div class="group">
       <label for="glowSlider">Key Glow: <span id="glowValue">300ms</span></label>
       <input type="range" id="glowSlider" min="100" max="1000" step="50" value="300">
     </div>
     <div class="group">
       <button class="icon-btn" id="themeToggle" title="Toggle theme">🌙</button>
     </div>
+  </section>
+
+  <section class="panel" id="articlePanel" style="display:none;">
+    <label for="articleInput" style="display:block; font-size:.8rem; color:var(--muted); margin-bottom:8px;">Paste or type your own article (English only) — it will be normalized to a single flowing paragraph.</label>
+    <textarea id="articleInput" rows="5" placeholder="Paste your article here..." style="width:100%; resize:vertical; padding:10px; border-radius:10px; border:1px solid var(--key-border); background:var(--panel-2); color:var(--text); font-family:inherit; font-size:.9rem;"></textarea>
+    <div id="articleWarning" style="display:none; color:var(--error); font-size:.8rem; margin-top:6px;">Please paste some text before starting.</div>
   </section>
 
   <section class="panel controls-stats">
@@ -400,6 +413,7 @@
   <footer>Physical keyboard input drives this game — glow duration and theme are adjustable above.</footer>
 </div>
 
+<script src="data.js"></script>
 <script>
 (() => {
   "use strict";
@@ -407,74 +421,12 @@
   /* ============================ Config ============================ */
   let KEY_GLOW_DURATION_MS = 300; // default glow duration, editable via slider
 
-  /* ============================ Zhuyin mapping ============================ */
-  const KEY_TO_ZHUYIN = {
-    "1": "ㄅ", "2": "ㄉ", "3": "ˇ", "4": "ˋ", "5": "ㄓ", "6": "ˊ", "7": "˙", "8": "ㄚ", "9": "ㄞ", "0": "ㄢ", "-": "ㄦ",
-    "q": "ㄆ", "w": "ㄊ", "e": "ㄍ", "r": "ㄐ", "t": "ㄔ", "y": "ㄗ", "u": "ㄧ", "i": "ㄛ", "o": "ㄟ", "p": "ㄣ",
-    "a": "ㄇ", "s": "ㄋ", "d": "ㄎ", "f": "ㄑ", "g": "ㄕ", "h": "ㄘ", "j": "ㄨ", "k": "ㄜ", "l": "ㄠ", ";": "ㄤ",
-    "z": "ㄈ", "x": "ㄌ", "c": "ㄏ", "v": "ㄒ", "b": "ㄖ", "n": "ㄙ", "m": "ㄩ", ",": "ㄝ", ".": "ㄡ", "/": "ㄥ", " ": " "
-  };
   const ZHUYIN_TO_KEY = Object.fromEntries(Object.entries(KEY_TO_ZHUYIN).map(([k, v]) => [v, k]));
-
-  /* Character -> Zhuyin spelling (ordered symbols incl. tone mark) used to build practice sequences */
-  const CHAR_ZHUYIN = {
-    "你": "ㄋㄧˇ", "好": "ㄏㄠˇ", "謝": "ㄒㄧㄝˋ", "早": "ㄗㄠˇ", "安": "ㄢ", "晚": "ㄨㄢˇ",
-    "再": "ㄗㄞˋ", "見": "ㄐㄧㄢˋ", "中": "ㄓㄨㄥ", "文": "ㄨㄣˊ", "學": "ㄒㄩㄝˊ", "生": "ㄕㄥ",
-    "老": "ㄌㄠˇ", "師": "ㄕ", "朋": "ㄆㄥˊ", "友": "ㄧㄡˇ", "電": "ㄉㄧㄢˋ", "腦": "ㄋㄠˇ",
-    "台": "ㄊㄞˊ", "灣": "ㄨㄢ", "國": "ㄍㄨㄛˊ", "手": "ㄕㄡˇ", "機": "ㄐㄧ", "天": "ㄊㄧㄢ",
-    "氣": "ㄑㄧˋ", "時": "ㄕˊ", "間": "ㄐㄧㄢ", "快": "ㄎㄨㄞˋ", "樂": "ㄌㄜˋ", "喜": "ㄒㄧˇ",
-    "歡": "ㄏㄨㄢ", "工": "ㄍㄨㄥ", "作": "ㄗㄨㄛˋ", "嗎": "ㄇㄚ˙", "我": "ㄨㄛˇ", "是": "ㄕˋ",
-    "很": "ㄏㄣˇ", "難": "ㄋㄢˊ", "今": "ㄐㄧㄣ", "愛": "ㄞˋ", "祝": "ㄓㄨˋ", "幾": "ㄐㄧˇ",
-    "點": "ㄉㄧㄢˇ", "了": "ㄌㄜ˙", "的": "ㄉㄜ˙", "和": "ㄏㄢˋ", "都": "ㄉㄡ", "用": "ㄩㄥˋ",
-    "日": "ㄖˋ", "上": "ㄕㄤˋ", "現": "ㄒㄧㄢˋ", "在": "ㄗㄞˋ"
-  };
-
-  /* ============================ Content pools ============================ */
-  const EN_POOL = {
-    easy: [
-      "the quick brown fox jumps over the lazy dog",
-      "she sells seashells by the seashore",
-      "practice makes perfect every single day",
-      "i like to read books in the sun",
-      "cats and dogs are common pets"
-    ],
-    medium: [
-      "the five boxing wizards jump quickly to finish the job",
-      "programming is the art of solving problems with code",
-      "a journey of a thousand miles begins with a single step",
-      "typing fast requires patience, practice, and focus every day",
-      "the weather today is sunny with a gentle breeze from the sea"
-    ],
-    hard: [
-      "amazingly few discotheques provide jukeboxes for quiet nights",
-      "success is not final, failure is not fatal, it is the courage to continue that counts",
-      "in the middle of every difficulty lies an opportunity waiting to be discovered",
-      "the only way to do great work is to love what you do, so keep typing",
-      "consistency and patience will turn ordinary practice into extraordinary skill"
-    ]
-  };
-
-  const ZH_POOL = {
-    easy: ["你好", "謝謝", "早安", "晚安", "再見", "中文", "學生", "老師", "朋友", "電腦"],
-    medium: ["台灣中國", "手機電腦", "天氣時間", "生日快樂", "喜歡工作", "你好嗎", "謝謝你", "我是學生", "中文很難", "早上好"],
-    hard: ["今天天氣很好", "我愛你中文", "祝你生日快樂", "現在幾點了", "謝謝你的朋友", "中文老師很好", "我喜歡學中文", "電腦和手機都好用"]
-  };
-
-  /* ============================ Keyboard layout ============================ */
-  const ROWS = [
-    ["`", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "=", "Backspace"],
-    ["Tab", "q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "[", "]", "\\"],
-    ["CapsLock", "a", "s", "d", "f", "g", "h", "j", "k", "l", ";", "'", "Enter"],
-    ["ShiftLeft", "z", "x", "c", "v", "b", "n", "m", ",", ".", "/", "ShiftRight"],
-    [" "]
-  ];
-  const KEY_WIDTH = { "Backspace": 2, "Tab": 1.5, "CapsLock": 1.8, "Enter": 2.2, "ShiftLeft": 2.4, "ShiftRight": 2.4, " ": 8 };
-  const SPECIAL_LABEL = { "Backspace": "⌫", "Tab": "Tab", "CapsLock": "Caps", "Enter": "Enter", "ShiftLeft": "Shift", "ShiftRight": "Shift", " ": "Space" };
-  const SPECIAL_IDS = new Set(["Backspace", "Tab", "CapsLock", "Enter", "ShiftLeft", "ShiftRight"]);
 
   /* ============================ State ============================ */
   let mode = "en";
   let difficulty = "easy";
+  let source = "pool"; // 'pool' | 'custom'
   let session = null;
   let timerInterval = null;
   const keyElements = new Map();
@@ -498,6 +450,10 @@
   const themeToggle = $("themeToggle");
   const modeSwitch = $("modeSwitch");
   const difficultySwitch = $("difficultySwitch");
+  const sourceSwitch = $("sourceSwitch");
+  const articlePanel = $("articlePanel");
+  const articleInput = $("articleInput");
+  const articleWarning = $("articleWarning");
 
   /* ============================ Keyboard rendering ============================ */
   function keyLabel(keyId) {
@@ -569,6 +525,12 @@
   }
 
   /* ============================ Session building ============================ */
+  const ARTICLE_MAX_LENGTH = 5000;
+
+  function normalizeArticleText(raw) {
+    return raw.replace(/\s+/g, " ").trim().slice(0, ARTICLE_MAX_LENGTH);
+  }
+
   function pickText() {
     const pool = mode === "en" ? EN_POOL[difficulty] : ZH_POOL[difficulty];
     return pool[Math.floor(Math.random() * pool.length)];
@@ -735,6 +697,7 @@
 
   function startSession(reuseText) {
     const text = reuseText || pickText();
+    if (!text) return;
     session = createSession(text);
     renderTargetText();
     updateStats();
@@ -809,6 +772,13 @@
     if (!btn) return;
     mode = btn.dataset.mode;
     [...modeSwitch.children].forEach((b) => b.classList.toggle("active", b === btn));
+    if (mode === "zh" && source === "custom") {
+      source = "pool";
+      [...sourceSwitch.children].forEach((b) => b.classList.toggle("active", b.dataset.source === "pool"));
+      articlePanel.style.display = "none";
+      difficultySwitch.style.opacity = "1";
+      difficultySwitch.style.pointerEvents = "auto";
+    }
     renderKeyboard();
     resetToIdle();
   });
@@ -833,9 +803,30 @@
     themeToggle.textContent = next === "dark" ? "🌙" : "☀️";
   });
 
-  startBtn.addEventListener("click", () => startSession());
+  startBtn.addEventListener("click", () => {
+    if (source === "custom") {
+      const text = normalizeArticleText(articleInput.value);
+      articleWarning.style.display = text ? "none" : "block";
+      if (!text) return;
+      startSession(text);
+    } else {
+      startSession();
+    }
+  });
   restartBtn.addEventListener("click", () => { if (session) startSession(session.text); });
   pauseBtn.addEventListener("click", togglePause);
+
+  sourceSwitch.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-source]");
+    if (!btn) return;
+    if (btn.dataset.source === "custom" && mode === "zh") return; // custom articles are English-only
+    source = btn.dataset.source;
+    [...sourceSwitch.children].forEach((b) => b.classList.toggle("active", b === btn));
+    articlePanel.style.display = source === "custom" ? "block" : "none";
+    difficultySwitch.style.opacity = source === "custom" ? ".4" : "1";
+    difficultySwitch.style.pointerEvents = source === "custom" ? "none" : "auto";
+    resetToIdle();
+  });
 
   /* ============================ Init ============================ */
   renderKeyboard();
