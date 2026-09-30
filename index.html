@@ -336,10 +336,140 @@
     margin-top: 4px;
   }
 
+  /* ---------- Home screen ---------- */
+  #homeScreen {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    align-items: center;
+    text-align: center;
+  }
+  .home-title {
+    margin: 0;
+    font-size: .95rem;
+    color: var(--muted);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+  }
+  .style-cards {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+  }
+  .style-card {
+    flex: 1 1 220px;
+    max-width: 320px;
+    background: var(--panel-2);
+    border: 2px solid var(--key-border);
+    border-radius: 14px;
+    padding: 20px 16px;
+    cursor: pointer;
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    font-family: inherit;
+    transition: border-color .2s ease, transform .12s ease, box-shadow .2s ease;
+  }
+  .style-card:hover { transform: translateY(-2px); }
+  .style-card.active { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent); }
+  .style-icon { font-size: 2.2rem; }
+  .style-name { font-weight: 700; font-size: 1.05rem; }
+  .style-desc { font-size: .8rem; color: var(--muted); }
+  .home-options {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .home-start-btn { width: 100%; max-width: 320px; padding: 14px; font-size: 1rem; }
+
+  /* ---------- Arcade ---------- */
+  #arcadeFieldWrap { padding: 8px; }
+  #arcadeField {
+    position: relative;
+    height: 440px;
+    background: var(--panel-2);
+    border: 1px solid var(--key-border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  #arcadePlaceholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 1rem;
+    text-align: center;
+    padding: 0 24px;
+  }
+  .arcade-word {
+    position: absolute;
+    top: -40px;
+    white-space: nowrap;
+    font-size: 1.35rem;
+    font-weight: 700;
+    padding: 5px 10px;
+    border-radius: 8px;
+    color: var(--muted);
+    transition: box-shadow .12s ease, background-color .12s ease;
+  }
+  .arcade-word.locked {
+    background: var(--panel);
+    box-shadow: 0 0 0 2px var(--current), 0 0 14px var(--current);
+  }
+  .arcade-word .aw-unit { transition: color .1s ease; }
+  .arcade-word .aw-unit.correct { color: var(--correct); }
+  .arcade-word .aw-unit.active {
+    color: var(--text);
+    text-decoration: underline;
+    text-decoration-color: var(--current);
+    text-decoration-thickness: 2px;
+  }
+  .arcade-word .aw-unit.wrong-flash { color: #fff; background: var(--error); border-radius: 4px; }
+  .arcade-word.shake { animation: aw-shake .2s ease; }
+  .arcade-word.exploding { animation: aw-explode .34s ease forwards; pointer-events: none; }
+  .arcade-word.missed { animation: aw-miss-drop .3s ease forwards; pointer-events: none; }
+  @keyframes aw-shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+  }
+  @keyframes aw-explode {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.5); opacity: .85; filter: brightness(1.6); }
+    100% { transform: scale(.2); opacity: 0; }
+  }
+  @keyframes aw-miss-drop {
+    to { opacity: 0; transform: translateY(24px); }
+  }
+  .arcade-overlay {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, .55);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: #fff;
+    text-align: center;
+    padding: 20px;
+  }
+  .arcade-overlay-title { font-size: 1.4rem; font-weight: 700; }
+  .arcade-overlay-actions { display: flex; gap: 10px; }
+
   @media (max-width: 640px) {
     .stats { gap: 12px; }
     .stat { min-width: 60px; }
     .key .sub { display: none; }
+    #arcadeField { height: 340px; }
   }
 </style>
 </head>
@@ -351,28 +481,9 @@
     <p>Practice English QWERTY typing or Chinese Zhuyin (ㄅㄆㄇㄈ) input — with a live glowing keyboard.</p>
   </header>
 
-  <section class="panel settings">
+  <section class="panel settings" id="utilityBar">
     <div class="group">
-      <label>Mode</label>
-      <div class="segmented" id="modeSwitch">
-        <button data-mode="en" class="active">English</button>
-        <button data-mode="zh">中文 Zhuyin</button>
-      </div>
-    </div>
-    <div class="group">
-      <label>Difficulty</label>
-      <div class="segmented" id="difficultySwitch">
-        <button data-difficulty="easy" class="active">Easy</button>
-        <button data-difficulty="medium">Medium</button>
-        <button data-difficulty="hard">Hard</button>
-      </div>
-    </div>
-    <div class="group">
-      <label>Source</label>
-      <div class="segmented" id="sourceSwitch">
-        <button data-source="pool" class="active">Practice Pool</button>
-        <button data-source="custom">My Article</button>
-      </div>
+      <button class="icon-btn" id="homeBtn" title="Back to menu">🏠 Menu</button>
     </div>
     <div class="group">
       <label for="glowSlider">Key Glow: <span id="glowValue">300ms</span></label>
@@ -383,32 +494,127 @@
     </div>
   </section>
 
-  <section class="panel" id="articlePanel" style="display:none;">
-    <label for="articleInput" style="display:block; font-size:.8rem; color:var(--muted); margin-bottom:8px;">Paste or type your own article (English only) — it will be normalized to a single flowing paragraph.</label>
-    <textarea id="articleInput" rows="5" placeholder="Paste your article here..." style="width:100%; resize:vertical; padding:10px; border-radius:10px; border:1px solid var(--key-border); background:var(--panel-2); color:var(--text); font-family:inherit; font-size:.9rem;"></textarea>
-    <div id="articleWarning" style="display:none; color:var(--error); font-size:.8rem; margin-top:6px;">Please paste some text before starting.</div>
-  </section>
-
-  <section class="panel controls-stats">
-    <div class="controls">
-      <button class="btn" id="startBtn">▶ Start</button>
-      <button class="btn secondary" id="restartBtn" disabled>⟲ Restart</button>
-      <button class="btn secondary" id="pauseBtn" disabled>⏸ Pause</button>
+  <section class="panel" id="homeScreen">
+    <h2 class="home-title">Choose Your Game Style</h2>
+    <div class="style-cards">
+      <button class="style-card active" data-style="classic" type="button">
+        <div class="style-icon">📝</div>
+        <div class="style-name">Classic Practice</div>
+        <div class="style-desc">Linear sentence/word typing with standard progress indicators.</div>
+      </button>
+      <button class="style-card" data-style="arcade" type="button">
+        <div class="style-icon">🚀</div>
+        <div class="style-name">Falling Words Arcade</div>
+        <div class="style-desc">Shoot down falling words before they hit the ground.</div>
+      </button>
     </div>
-    <div class="stats">
-      <div class="stat"><div class="value" id="statTime">00:00</div><div class="label">Time</div></div>
-      <div class="stat"><div class="value" id="statSpeed">0</div><div class="label" id="statSpeedLabel">WPM</div></div>
-      <div class="stat"><div class="value" id="statAccuracy">100%</div><div class="label">Accuracy</div></div>
+    <div class="home-options">
+      <div class="group">
+        <label>Language</label>
+        <div class="segmented" id="homeModeSwitch">
+          <button data-mode="en" class="active" type="button">English</button>
+          <button data-mode="zh" type="button">中文 Zhuyin</button>
+        </div>
+      </div>
+      <div class="group">
+        <label>Difficulty</label>
+        <div class="segmented" id="homeDifficultySwitch">
+          <button data-difficulty="easy" class="active" type="button">Easy</button>
+          <button data-difficulty="medium" type="button">Medium</button>
+          <button data-difficulty="hard" type="button">Hard</button>
+        </div>
+      </div>
     </div>
+    <button class="btn home-start-btn" id="homeStartBtn">▶ Start Game</button>
   </section>
 
-  <section class="panel" id="textPanel">
-    <div id="placeholder">Press <strong>Start</strong> to begin a practice session.</div>
-    <div id="resultBanner"></div>
-    <div id="targetText"></div>
-  </section>
+  <div id="classicScreen" style="display:none;">
+    <section class="panel settings">
+      <div class="group">
+        <label>Mode</label>
+        <div class="segmented" id="modeSwitch">
+          <button data-mode="en" class="active">English</button>
+          <button data-mode="zh">中文 Zhuyin</button>
+        </div>
+      </div>
+      <div class="group">
+        <label>Difficulty</label>
+        <div class="segmented" id="difficultySwitch">
+          <button data-difficulty="easy" class="active">Easy</button>
+          <button data-difficulty="medium">Medium</button>
+          <button data-difficulty="hard">Hard</button>
+        </div>
+      </div>
+      <div class="group">
+        <label>Source</label>
+        <div class="segmented" id="sourceSwitch">
+          <button data-source="pool" class="active">Practice Pool</button>
+          <button data-source="custom">My Article</button>
+        </div>
+      </div>
+    </section>
 
-  <section class="panel" id="keyboard"></section>
+    <section class="panel" id="articlePanel" style="display:none;">
+      <label for="articleInput" style="display:block; font-size:.8rem; color:var(--muted); margin-bottom:8px;">Paste or type your own article (English only) — it will be normalized to a single flowing paragraph.</label>
+      <textarea id="articleInput" rows="5" placeholder="Paste your article here..." style="width:100%; resize:vertical; padding:10px; border-radius:10px; border:1px solid var(--key-border); background:var(--panel-2); color:var(--text); font-family:inherit; font-size:.9rem;"></textarea>
+      <div id="articleWarning" style="display:none; color:var(--error); font-size:.8rem; margin-top:6px;">Please paste some text before starting.</div>
+    </section>
+
+    <section class="panel controls-stats">
+      <div class="controls">
+        <button class="btn" id="startBtn">▶ Start</button>
+        <button class="btn secondary" id="restartBtn" disabled>⟲ Restart</button>
+        <button class="btn secondary" id="pauseBtn" disabled>⏸ Pause</button>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="value" id="statTime">00:00</div><div class="label">Time</div></div>
+        <div class="stat"><div class="value" id="statSpeed">0</div><div class="label" id="statSpeedLabel">WPM</div></div>
+        <div class="stat"><div class="value" id="statAccuracy">100%</div><div class="label">Accuracy</div></div>
+      </div>
+    </section>
+
+    <section class="panel" id="textPanel">
+      <div id="placeholder">Press <strong>Start</strong> to begin a practice session.</div>
+      <div id="resultBanner"></div>
+      <div id="targetText"></div>
+    </section>
+
+    <div id="classicKeyboardSlot">
+      <section class="panel" id="keyboard"></section>
+    </div>
+  </div>
+
+  <div id="arcadeScreen" style="display:none;">
+    <section class="panel controls-stats">
+      <div class="controls">
+        <button class="btn" id="arcadeStartBtn">▶ Start</button>
+        <button class="btn secondary" id="arcadeRestartBtn" disabled>⟲ Restart</button>
+        <button class="btn secondary" id="arcadePauseBtn" disabled>⏸ Pause</button>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="value" id="arcadeScore">0</div><div class="label">Score</div></div>
+        <div class="stat"><div class="value" id="arcadeCombo">x0</div><div class="label">Combo</div></div>
+        <div class="stat"><div class="value" id="arcadeLives">❤️❤️❤️</div><div class="label">Lives</div></div>
+        <div class="stat"><div class="value" id="arcadeTime">00:00</div><div class="label">Time</div></div>
+      </div>
+    </section>
+
+    <section class="panel" id="arcadeFieldWrap">
+      <div id="arcadeField">
+        <div id="arcadePlaceholder">Press <strong>Start</strong> to launch the falling words arcade.</div>
+        <div id="arcadeGameOver" class="arcade-overlay">
+          <div class="arcade-overlay-title">💥 Game Over</div>
+          <div id="arcadeFinalStats"></div>
+          <div class="arcade-overlay-actions">
+            <button class="btn" id="arcadePlayAgainBtn">▶ Play Again</button>
+            <button class="btn secondary" id="arcadeHomeBtn">🏠 Menu</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div id="arcadeKeyboardSlot"></div>
+  </div>
 
   <footer>Physical keyboard input drives this game — glow duration and theme are adjustable above.</footer>
 </div>
@@ -427,7 +633,10 @@
   let mode = "en";
   let difficulty = "easy";
   let source = "pool"; // 'pool' | 'custom'
+  let screen = "home"; // 'home' | 'classic' | 'arcade'
+  let gameStyle = "classic"; // 'classic' | 'arcade'
   let session = null;
+  let arcade = null;
   let timerInterval = null;
   const keyElements = new Map();
   const pressTimeouts = new Map();
@@ -454,6 +663,26 @@
   const articlePanel = $("articlePanel");
   const articleInput = $("articleInput");
   const articleWarning = $("articleWarning");
+  const homeBtn = $("homeBtn");
+  const homeScreenEl = $("homeScreen");
+  const classicScreenEl = $("classicScreen");
+  const arcadeScreenEl = $("arcadeScreen");
+  const classicKeyboardSlot = $("classicKeyboardSlot");
+  const arcadeKeyboardSlot = $("arcadeKeyboardSlot");
+  const homeStartBtn = $("homeStartBtn");
+  const arcadeStartBtn = $("arcadeStartBtn");
+  const arcadeRestartBtn = $("arcadeRestartBtn");
+  const arcadePauseBtn = $("arcadePauseBtn");
+  const arcadeScoreEl = $("arcadeScore");
+  const arcadeComboEl = $("arcadeCombo");
+  const arcadeLivesEl = $("arcadeLives");
+  const arcadeTimeEl = $("arcadeTime");
+  const arcadeFieldEl = $("arcadeField");
+  const arcadePlaceholderEl = $("arcadePlaceholder");
+  const arcadeGameOverEl = $("arcadeGameOver");
+  const arcadeFinalStatsEl = $("arcadeFinalStats");
+  const arcadePlayAgainBtn = $("arcadePlayAgainBtn");
+  const arcadeHomeBtn = $("arcadeHomeBtn");
 
   /* ============================ Keyboard rendering ============================ */
   function keyLabel(keyId) {
@@ -742,53 +971,331 @@
     if (isFormControlFocused()) return;
     const keyId = getEventKeyId(e);
     if (keyId != null) glowKey(keyId);
-
-    if (!session || !session.running || session.paused || session.finished) return;
     if (keyId == null) return;
 
-    if (keyId === " " || (keyId.length === 1 && keyId !== "Backspace")) {
-      e.preventDefault();
-    }
+    if (screen === "classic") {
+      if (!session || !session.running || session.paused || session.finished) return;
 
-    const unit = session.units[session.pointer];
-    if (!unit) return;
+      if (keyId === " " || (keyId.length === 1 && keyId !== "Backspace")) {
+        e.preventDefault();
+      }
 
-    if (keyId === unit.expectedKey) {
-      session.correct++;
-      session.pointer++;
-      updateHighlight();
-      updateStats();
-      if (session.pointer >= session.units.length) finishSession();
-    } else {
-      session.incorrect++;
-      flashError();
-      updateStats();
+      const unit = session.units[session.pointer];
+      if (!unit) return;
+
+      if (keyId === unit.expectedKey) {
+        session.correct++;
+        session.pointer++;
+        updateHighlight();
+        updateStats();
+        if (session.pointer >= session.units.length) finishSession();
+      } else {
+        session.incorrect++;
+        flashError();
+        updateStats();
+      }
+    } else if (screen === "arcade") {
+      if (!arcade || !arcade.running || arcade.paused) return;
+      if (keyId === " " || (keyId.length === 1 && keyId !== "Backspace")) {
+        e.preventDefault();
+      }
+      handleArcadeKeydown(keyId);
     }
   });
+
+  /* ============================ Arcade engine ============================ */
+  const ARCADE_CONFIG = {
+    easy: { spawnIntervalMs: 2200, fallSpeed: 42, lives: 5 },
+    medium: { spawnIntervalMs: 1500, fallSpeed: 68, lives: 4 },
+    hard: { spawnIntervalMs: 1000, fallSpeed: 100, lives: 3 }
+  };
+  const ARCADE_DIFFICULTY_MULT = { easy: 1, medium: 1.5, hard: 2 };
+  let arcadeWordSeq = 0;
+
+  function getEnglishWordBank(diff) {
+    const words = new Set();
+    EN_POOL[diff].forEach((sentence) => {
+      sentence.replace(/[.,]/g, "").split(" ").forEach((w) => { if (w.length >= 3) words.add(w); });
+    });
+    return [...words];
+  }
+
+  function pickArcadeWord() {
+    if (mode === "en") {
+      const bank = getEnglishWordBank(difficulty);
+      const text = bank[Math.floor(Math.random() * bank.length)];
+      return { text, units: buildUnitsEnglish(text), blocks: null };
+    }
+    const bank = ZH_POOL[difficulty];
+    const text = bank[Math.floor(Math.random() * bank.length)];
+    const { units, blocks } = buildUnitsChinese(text);
+    return { text, units, blocks };
+  }
+
+  function spawnWord() {
+    const data = pickArcadeWord();
+    if (!data.text) return;
+    const id = ++arcadeWordSeq;
+    const el = document.createElement("div");
+    el.className = "arcade-word";
+    const blocks = [];
+
+    if (mode === "en") {
+      data.text.split("").forEach((ch, i) => {
+        const span = document.createElement("span");
+        span.className = "aw-unit";
+        span.textContent = ch;
+        el.appendChild(span);
+        blocks.push({ span, start: i, end: i + 1 });
+      });
+    } else {
+      data.blocks.forEach((b) => {
+        const span = document.createElement("span");
+        span.className = "aw-unit";
+        span.textContent = b.char;
+        el.appendChild(span);
+        blocks.push({ span, start: b.start, end: b.end });
+      });
+    }
+
+    const fieldWidth = arcadeFieldEl.clientWidth || 600;
+    const left = Math.random() * Math.max(10, fieldWidth - 100);
+    el.style.left = `${left}px`;
+    el.style.top = "-40px";
+    arcadeFieldEl.appendChild(el);
+
+    arcade.words.set(id, {
+      id, el, blocks, units: data.units, pointer: 0,
+      y: -40, speed: arcade.config.fallSpeed * (0.9 + Math.random() * 0.2)
+    });
+  }
+
+  function updateWordVisual(word) {
+    word.blocks.forEach((block) => {
+      const done = word.pointer >= block.end;
+      const active = word.pointer >= block.start && word.pointer < block.end;
+      block.span.classList.toggle("correct", done);
+      block.span.classList.toggle("active", active);
+    });
+  }
+
+  function flashWordError(word) {
+    const block = word.blocks.find((b) => word.pointer >= b.start && word.pointer < b.end);
+    if (block) {
+      block.span.classList.add("wrong-flash");
+      setTimeout(() => block.span.classList.remove("wrong-flash"), 200);
+    }
+    const unit = word.units[word.pointer];
+    if (unit) flashWrongKey(unit.expectedKey);
+    word.el.classList.add("shake");
+    setTimeout(() => word.el.classList.remove("shake"), 200);
+  }
+
+  function releaseLock(word) {
+    if (arcade.activeWordId === word.id) arcade.activeWordId = null;
+    word.el.classList.remove("locked");
+  }
+
+  function destroyWord(word) {
+    releaseLock(word);
+    arcade.words.delete(word.id);
+    const diffMult = ARCADE_DIFFICULTY_MULT[difficulty] || 1;
+    arcade.combo++;
+    arcade.maxCombo = Math.max(arcade.maxCombo, arcade.combo);
+    const comboMult = 1 + Math.min(arcade.combo, 10) * 0.1;
+    arcade.score += Math.round(word.units.length * 10 * diffMult * comboMult);
+    word.el.classList.add("exploding");
+    setTimeout(() => word.el.remove(), 340);
+    updateArcadeStatsDisplay();
+  }
+
+  function markMissed(word) {
+    releaseLock(word);
+    arcade.words.delete(word.id);
+    arcade.combo = 0;
+    arcade.lives--;
+    word.el.classList.add("missed");
+    setTimeout(() => word.el.remove(), 320);
+    updateArcadeStatsDisplay();
+    if (arcade.lives <= 0) gameOverArcade();
+  }
+
+  function handleArcadeKeydown(keyId) {
+    let word = arcade.activeWordId != null ? arcade.words.get(arcade.activeWordId) : null;
+    if (!word) {
+      const candidates = [...arcade.words.values()].filter((w) => w.units[0] && w.units[0].expectedKey === keyId);
+      if (!candidates.length) return;
+      candidates.sort((a, b) => b.y - a.y);
+      word = candidates[0];
+      arcade.activeWordId = word.id;
+      word.el.classList.add("locked");
+    }
+    const unit = word.units[word.pointer];
+    if (!unit) return;
+    if (unit.expectedKey === keyId) {
+      word.pointer++;
+      updateWordVisual(word);
+      if (word.pointer >= word.units.length) destroyWord(word);
+    } else {
+      flashWordError(word);
+    }
+  }
+
+  function updateArcadeStatsDisplay() {
+    arcadeScoreEl.textContent = arcade.score;
+    arcadeComboEl.textContent = `x${arcade.combo}`;
+    arcadeLivesEl.textContent = "❤️".repeat(Math.max(0, arcade.lives));
+    const elapsedSec = arcade.running
+      ? (Date.now() - arcade.startTime - arcade.pausedDuration) / 1000
+      : (arcade.elapsedFinal || 0);
+    arcadeTimeEl.textContent = formatTime(Math.max(0, elapsedSec));
+  }
+
+  function clearArcadeField() {
+    arcadeFieldEl.querySelectorAll(".arcade-word").forEach((n) => n.remove());
+  }
+
+  function arcadeLoop(ts) {
+    if (!arcade || !arcade.running || arcade.paused) return;
+    if (arcade.lastFrameTime == null) arcade.lastFrameTime = ts;
+    const dt = Math.min((ts - arcade.lastFrameTime) / 1000, 0.1); // clamp to avoid jumps after a throttled/backgrounded tab
+    arcade.lastFrameTime = ts;
+
+    arcade.timeSinceSpawn += dt * 1000;
+    if (arcade.timeSinceSpawn >= arcade.config.spawnIntervalMs) {
+      arcade.timeSinceSpawn = 0;
+      spawnWord();
+    }
+
+    const fieldHeight = arcadeFieldEl.clientHeight;
+    arcade.words.forEach((word) => {
+      word.y += word.speed * dt;
+      word.el.style.top = `${word.y}px`;
+      if (word.y > fieldHeight - 36) markMissed(word);
+    });
+
+    updateArcadeStatsDisplay();
+    arcade.rafId = requestAnimationFrame(arcadeLoop);
+  }
+
+  function resetArcadeToIdle() {
+    if (arcade && arcade.rafId) cancelAnimationFrame(arcade.rafId);
+    arcade = null;
+    clearArcadeField();
+    arcadeGameOverEl.style.display = "none";
+    arcadePlaceholderEl.style.display = "flex";
+    arcadeScoreEl.textContent = "0";
+    arcadeComboEl.textContent = "x0";
+    arcadeLivesEl.textContent = "❤️".repeat(ARCADE_CONFIG[difficulty].lives);
+    arcadeTimeEl.textContent = "00:00";
+    arcadeRestartBtn.disabled = true;
+    arcadePauseBtn.disabled = true;
+    arcadePauseBtn.textContent = "⏸ Pause";
+  }
+
+  function startArcade() {
+    clearArcadeField();
+    const cfg = ARCADE_CONFIG[difficulty];
+    arcade = {
+      running: true, paused: false, score: 0, combo: 0, maxCombo: 0, lives: cfg.lives,
+      words: new Map(), activeWordId: null, config: cfg, startTime: Date.now(),
+      pausedDuration: 0, lastFrameTime: null, timeSinceSpawn: cfg.spawnIntervalMs
+    };
+    arcadePlaceholderEl.style.display = "none";
+    arcadeGameOverEl.style.display = "none";
+    arcadeRestartBtn.disabled = false;
+    arcadePauseBtn.disabled = false;
+    arcadePauseBtn.textContent = "⏸ Pause";
+    updateArcadeStatsDisplay();
+    arcade.rafId = requestAnimationFrame(arcadeLoop);
+  }
+
+  function toggleArcadePause() {
+    if (!arcade || !arcade.running) return;
+    arcade.paused = !arcade.paused;
+    if (arcade.paused) {
+      cancelAnimationFrame(arcade.rafId);
+      arcade.pauseStart = Date.now();
+      arcadePauseBtn.textContent = "▶ Resume";
+    } else {
+      arcade.pausedDuration += Date.now() - arcade.pauseStart;
+      arcade.lastFrameTime = null;
+      arcadePauseBtn.textContent = "⏸ Pause";
+      arcade.rafId = requestAnimationFrame(arcadeLoop);
+    }
+  }
+
+  function gameOverArcade() {
+    arcade.running = false;
+    cancelAnimationFrame(arcade.rafId);
+    arcade.elapsedFinal = (Date.now() - arcade.startTime - arcade.pausedDuration) / 1000;
+    arcadeFinalStatsEl.textContent = `Score: ${arcade.score} · Max Combo: x${arcade.maxCombo} · Time: ${formatTime(arcade.elapsedFinal)}`;
+    arcadeGameOverEl.style.display = "flex";
+    arcadePauseBtn.disabled = true;
+    updateArcadeStatsDisplay();
+  }
+
+  /* ============================ Screen switching ============================ */
+  function showScreen(name) {
+    screen = name;
+    homeScreenEl.style.display = name === "home" ? "flex" : "none";
+    classicScreenEl.style.display = name === "classic" ? "block" : "none";
+    arcadeScreenEl.style.display = name === "arcade" ? "block" : "none";
+
+    if (name !== "classic") stopTimer();
+    if (name !== "arcade" && arcade && arcade.rafId) cancelAnimationFrame(arcade.rafId);
+
+    if (name === "classic") {
+      classicKeyboardSlot.appendChild(keyboardEl);
+      renderKeyboard();
+      resetToIdle();
+    } else if (name === "arcade") {
+      arcadeKeyboardSlot.appendChild(keyboardEl);
+      renderKeyboard();
+      resetArcadeToIdle();
+    }
+  }
 
   /* ============================ UI wiring ============================ */
-  modeSwitch.addEventListener("click", (e) => {
-    const btn = e.target.closest("button[data-mode]");
-    if (!btn) return;
-    mode = btn.dataset.mode;
-    [...modeSwitch.children].forEach((b) => b.classList.toggle("active", b === btn));
-    if (mode === "zh" && source === "custom") {
-      source = "pool";
-      [...sourceSwitch.children].forEach((b) => b.classList.toggle("active", b.dataset.source === "pool"));
-      articlePanel.style.display = "none";
-      difficultySwitch.style.opacity = "1";
-      difficultySwitch.style.pointerEvents = "auto";
-    }
-    renderKeyboard();
-    resetToIdle();
-  });
+  function setMode(newMode) {
+    mode = newMode;
+    document.querySelectorAll("button[data-mode]").forEach((b) => b.classList.toggle("active", b.dataset.mode === mode));
+    if (mode === "zh" && source === "custom") setSource("pool");
+    if (screen === "classic") { renderKeyboard(); resetToIdle(); }
+    if (screen === "arcade") { renderKeyboard(); resetArcadeToIdle(); }
+  }
 
-  difficultySwitch.addEventListener("click", (e) => {
-    const btn = e.target.closest("button[data-difficulty]");
-    if (!btn) return;
-    difficulty = btn.dataset.difficulty;
-    [...difficultySwitch.children].forEach((b) => b.classList.toggle("active", b === btn));
+  function setDifficulty(newDifficulty) {
+    difficulty = newDifficulty;
+    document.querySelectorAll("button[data-difficulty]").forEach((b) => b.classList.toggle("active", b.dataset.difficulty === difficulty));
+    if (screen === "classic") resetToIdle();
+    if (screen === "arcade") resetArcadeToIdle();
+  }
+
+  function setSource(newSource) {
+    if (newSource === "custom" && mode === "zh") return; // custom articles are English-only
+    source = newSource;
+    document.querySelectorAll("button[data-source]").forEach((b) => b.classList.toggle("active", b.dataset.source === source));
+    articlePanel.style.display = source === "custom" ? "block" : "none";
+    difficultySwitch.style.opacity = source === "custom" ? ".4" : "1";
+    difficultySwitch.style.pointerEvents = source === "custom" ? "none" : "auto";
     resetToIdle();
+  }
+
+  function setGameStyle(style) {
+    gameStyle = style;
+    document.querySelectorAll("button[data-style]").forEach((b) => b.classList.toggle("active", b.dataset.style === style));
+  }
+
+  document.body.addEventListener("click", (e) => {
+    const modeBtn = e.target.closest("button[data-mode]");
+    if (modeBtn) { setMode(modeBtn.dataset.mode); return; }
+    const diffBtn = e.target.closest("button[data-difficulty]");
+    if (diffBtn) { setDifficulty(diffBtn.dataset.difficulty); return; }
+    const sourceBtn = e.target.closest("button[data-source]");
+    if (sourceBtn) { setSource(sourceBtn.dataset.source); return; }
+    const styleBtn = e.target.closest("button[data-style]");
+    if (styleBtn) { setGameStyle(styleBtn.dataset.style); return; }
   });
 
   glowSlider.addEventListener("input", () => {
@@ -803,6 +1310,10 @@
     themeToggle.textContent = next === "dark" ? "🌙" : "☀️";
   });
 
+  homeBtn.addEventListener("click", () => showScreen("home"));
+  homeStartBtn.addEventListener("click", () => showScreen(gameStyle === "arcade" ? "arcade" : "classic"));
+  arcadeHomeBtn.addEventListener("click", () => showScreen("home"));
+
   startBtn.addEventListener("click", () => {
     if (source === "custom") {
       const text = normalizeArticleText(articleInput.value);
@@ -816,21 +1327,14 @@
   restartBtn.addEventListener("click", () => { if (session) startSession(session.text); });
   pauseBtn.addEventListener("click", togglePause);
 
-  sourceSwitch.addEventListener("click", (e) => {
-    const btn = e.target.closest("button[data-source]");
-    if (!btn) return;
-    if (btn.dataset.source === "custom" && mode === "zh") return; // custom articles are English-only
-    source = btn.dataset.source;
-    [...sourceSwitch.children].forEach((b) => b.classList.toggle("active", b === btn));
-    articlePanel.style.display = source === "custom" ? "block" : "none";
-    difficultySwitch.style.opacity = source === "custom" ? ".4" : "1";
-    difficultySwitch.style.pointerEvents = source === "custom" ? "none" : "auto";
-    resetToIdle();
-  });
+  arcadeStartBtn.addEventListener("click", startArcade);
+  arcadeRestartBtn.addEventListener("click", startArcade);
+  arcadePauseBtn.addEventListener("click", toggleArcadePause);
+  arcadePlayAgainBtn.addEventListener("click", startArcade);
 
   /* ============================ Init ============================ */
   renderKeyboard();
-  resetToIdle();
+  showScreen("home");
 })();
 </script>
 </body>
