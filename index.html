@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Type Trainer — English &amp; Zhuyin (ㄅㄆㄇㄈ) Typing Game</title>
+<style>
+  :root[data-theme="dark"] {
+    --bg: #0f1117;
+    --panel: #161a23;
+    --panel-2: #1d2230;
+    --text: #e8ecf4;
+    --muted: #8892a4;
+    --accent: #5b8cff;
+    --correct: #37d67a;
+    --error: #ff5470;
+    --current: #ffd166;
+    --key-bg: #232838;
+    --key-border: #2e3448;
+    --shadow: rgba(0, 0, 0, 0.4);
+  }
+  :root[data-theme="light"] {
+    --bg: #f4f6fb;
+    --panel: #ffffff;
+    --panel-2: #eef1f8;
+    --text: #1c2230;
+    --muted: #5b6478;
+    --accent: #3b6df0;
+    --correct: #1fa958;
+    --error: #e0304a;
+    --current: #e6a400;
+    --key-bg: #ffffff;
+    --key-border: #d7dce6;
+    --shadow: rgba(20, 30, 60, 0.12);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, "Noto Sans TC", sans-serif;
+    transition: background-color .25s ease, color .25s ease;
+  }
+
+  body {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 20px 14px 60px;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 980px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  header.top {
+    text-align: center;
+  }
+  header.top h1 {
+    margin: 0 0 4px;
+    font-size: clamp(1.3rem, 3vw, 1.9rem);
+    letter-spacing: .5px;
+  }
+  header.top p {
+    margin: 0;
+    color: var(--muted);
+    font-size: .9rem;
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--key-border);
+    border-radius: 14px;
+    padding: 16px 18px;
+    box-shadow: 0 6px 20px var(--shadow);
+    transition: background-color .25s ease, border-color .25s ease;
+  }
+
+  /* ---------- Settings bar ---------- */
+  .settings {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .settings .group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .settings label {
+    font-size: .8rem;
+    color: var(--muted);
+  }
+
+  .segmented {
+    display: inline-flex;
+    background: var(--panel-2);
+    border-radius: 10px;
+    padding: 3px;
+    gap: 3px;
+  }
+  .segmented button {
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: .85rem;
+    cursor: pointer;
+    transition: background-color .2s ease, color .2s ease;
+  }
+  .segmented button.active {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  input[type="range"] {
+    accent-color: var(--accent);
+  }
+
+  .icon-btn {
+    border: 1px solid var(--key-border);
+    background: var(--panel-2);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 7px 10px;
+    cursor: pointer;
+    font-size: .95rem;
+    transition: background-color .2s ease, transform .1s ease;
+  }
+  .icon-btn:hover { background: var(--accent); color: #fff; }
+
+  /* ---------- Controls & stats ---------- */
+  .controls-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .btn {
+    border: none;
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-size: .9rem;
+    font-weight: 600;
+    cursor: pointer;
+    color: #fff;
+    background: var(--accent);
+    transition: filter .15s ease, transform .1s ease;
+  }
+  .btn:active { transform: scale(.96); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .btn.secondary { background: var(--panel-2); color: var(--text); border: 1px solid var(--key-border); }
+  .btn.danger { background: var(--error); }
+
+  .stats {
+    display: flex;
+    gap: 22px;
+    flex-wrap: wrap;
+  }
+  .stat {
+    text-align: center;
+    min-width: 74px;
+  }
+  .stat .value {
+    font-size: 1.3rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat .label {
+    font-size: .68rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+  }
+
+  /* ---------- Text display ---------- */
+  #textPanel {
+    min-height: 130px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+  }
+  #placeholder {
+    color: var(--muted);
+    font-size: 1rem;
+    text-align: center;
+  }
+  #resultBanner {
+    display: none;
+    text-align: center;
+    font-size: 1rem;
+    color: var(--correct);
+    font-weight: 600;
+  }
+
+  #targetText {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    line-height: 2.1;
+    font-size: clamp(1.1rem, 2.6vw, 1.6rem);
+    letter-spacing: .5px;
+  }
+
+  .char-unit {
+    position: relative;
+    padding: 2px 1px;
+    border-radius: 4px;
+    color: var(--muted);
+    white-space: pre;
+    transition: color .12s ease, background-color .12s ease, box-shadow .12s ease;
+  }
+  .char-unit.space { border-bottom: 2px solid var(--key-border); margin: 0 2px; }
+  .char-unit.correct { color: var(--correct); }
+  .char-unit.active {
+    color: var(--text);
+    background: var(--panel-2);
+    box-shadow: 0 0 0 2px var(--current);
+  }
+  .char-unit.wrong-flash {
+    background: var(--error);
+    color: #fff;
+    box-shadow: 0 0 0 2px var(--error);
+  }
+
+  /* Chinese blocks */
+  .zh-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 2px 6px;
+    padding: 4px 6px;
+    border-radius: 8px;
+    transition: box-shadow .15s ease;
+  }
+  .zh-block.block-current { box-shadow: 0 0 0 2px var(--current); }
+  .zh-symbols {
+    display: flex;
+    gap: 2px;
+    font-size: .9rem;
+    min-height: 1.1em;
+  }
+  .zh-symbol { color: var(--muted); transition: color .12s ease, background-color .12s ease; padding: 0 1px; border-radius: 3px; }
+  .zh-symbol.correct { color: var(--correct); }
+  .zh-symbol.active { color: var(--text); background: var(--panel-2); box-shadow: 0 0 0 2px var(--current); }
+  .zh-symbol.wrong-flash { background: var(--error); color: #fff; }
+  .zh-char {
+    font-size: 1.7rem;
+    color: var(--muted);
+    transition: color .15s ease;
+  }
+  .zh-block.block-done .zh-char { color: var(--correct); }
+
+  /* ---------- Keyboard ---------- */
+  #keyboard {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 4px;
+  }
+  .kb-row {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+  }
+  .key {
+    flex: 1 1 0;
+    min-width: 30px;
+    height: clamp(38px, 6vw, 54px);
+    background: var(--key-bg);
+    border: 1px solid var(--key-border);
+    border-radius: 9px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--text);
+    user-select: none;
+    position: relative;
+    box-shadow: 0 2px 0 var(--key-border);
+    transition: background-color .12s ease, transform .08s ease, box-shadow .12s ease, outline .1s ease;
+  }
+  .key .main {
+    font-size: clamp(.75rem, 1.6vw, 1.05rem);
+    font-weight: 600;
+    line-height: 1;
+  }
+  .key .sub {
+    font-size: .55rem;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .key.special .main { font-size: .68rem; font-weight: 500; }
+
+  .key.pressed {
+    background: var(--accent);
+    color: #fff;
+    transform: translateY(2px) scale(.96);
+    box-shadow: 0 0 14px var(--accent);
+  }
+  .key.pressed .sub { color: #e8ecf4; }
+  .key.next-key {
+    outline: 3px solid var(--current);
+    box-shadow: 0 0 12px var(--current);
+  }
+  .key.wrong-flash {
+    background: var(--error);
+    color: #fff;
+    box-shadow: 0 0 14px var(--error);
+  }
+
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: .75rem;
+    margin-top: 4px;
+  }
+
+  @media (max-width: 640px) {
+    .stats { gap: 12px; }
+    .stat { min-width: 60px; }
+    .key .sub { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="top">
+    <h1>⌨️ Type Trainer</h1>
+    <p>Practice English QWERTY typing or Chinese Zhuyin (ㄅㄆㄇㄈ) input — with a live glowing keyboard.</p>
+  </header>
+
+  <section class="panel settings">
+    <div class="group">
+      <label>Mode</label>
+      <div class="segmented" id="modeSwitch">
+        <button data-mode="en" class="active">English</button>
+        <button data-mode="zh">中文 Zhuyin</button>
+      </div>
+    </div>
+    <div class="group">
+      <label>Difficulty</label>
+      <div class="segmented" id="difficultySwitch">
+        <button data-difficulty="easy" class="active">Easy</button>
+        <button data-difficulty="medium">Medium</button>
+        <button data-difficulty="hard">Hard</button>
+      </div>
+    </div>
+    <div class="group">
+      <label for="glowSlider">Key Glow: <span id="glowValue">300ms</span></label>
+      <input type="range" id="glowSlider" min="100" max="1000" step="50" value="300">
+    </div>
+    <div class="group">
+      <button class="icon-btn" id="themeToggle" title="Toggle theme">🌙</button>
+    </div>
+  </section>
+
+  <section class="panel controls-stats">
+    <div class="controls">
+      <button class="btn" id="startBtn">▶ Start</button>
+      <button class="btn secondary" id="restartBtn" disabled>⟲ Restart</button>
+      <button class="btn secondary" id="pauseBtn" disabled>⏸ Pause</button>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="value" id="statTime">00:00</div><div class="label">Time</div></div>
+      <div class="stat"><div class="value" id="statSpeed">0</div><div class="label" id="statSpeedLabel">WPM</div></div>
+      <div class="stat"><div class="value" id="statAccuracy">100%</div><div class="label">Accuracy</div></div>
+    </div>
+  </section>
+
+  <section class="panel" id="textPanel">
+    <div id="placeholder">Press <strong>Start</strong> to begin a practice session.</div>
+    <div id="resultBanner"></div>
+    <div id="targetText"></div>
+  </section>
+
+  <section class="panel" id="keyboard"></section>
+
+  <footer>Physical keyboard input drives this game — glow duration and theme are adjustable above.</footer>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  /* ============================ Config ============================ */
+  let KEY_GLOW_DURATION_MS = 300; // default glow duration, editable via slider
+
+  /* ============================ Zhuyin mapping ============================ */
+  const KEY_TO_ZHUYIN = {
+    "1": "ㄅ", "2": "ㄉ", "3": "ˇ", "4": "ˋ", "5": "ㄓ", "6": "ˊ", "7": "˙", "8": "ㄚ", "9": "ㄞ", "0": "ㄢ", "-": "ㄦ",
+    "q": "ㄆ", "w": "ㄊ", "e": "ㄍ", "r": "ㄐ", "t": "ㄔ", "y": "ㄗ", "u": "ㄧ", "i": "ㄛ", "o": "ㄟ", "p": "ㄣ",
+    "a": "ㄇ", "s": "ㄋ", "d": "ㄎ", "f": "ㄑ", "g": "ㄕ", "h": "ㄘ", "j": "ㄨ", "k": "ㄜ", "l": "ㄠ", ";": "ㄤ",
+    "z": "ㄈ", "x": "ㄌ", "c": "ㄏ", "v": "ㄒ", "b": "ㄖ", "n": "ㄙ", "m": "ㄩ", ",": "ㄝ", ".": "ㄡ", "/": "ㄥ", " ": " "
+  };
+  const ZHUYIN_TO_KEY = Object.fromEntries(Object.entries(KEY_TO_ZHUYIN).map(([k, v]) => [v, k]));
+
+  /* Character -> Zhuyin spelling (ordered symbols incl. tone mark) used to build practice sequences */
+  const CHAR_ZHUYIN = {
+    "你": "ㄋㄧˇ", "好": "ㄏㄠˇ", "謝": "ㄒㄧㄝˋ", "早": "ㄗㄠˇ", "安": "ㄢ", "晚": "ㄨㄢˇ",
+    "再": "ㄗㄞˋ", "見": "ㄐㄧㄢˋ", "中": "ㄓㄨㄥ", "文": "ㄨㄣˊ", "學": "ㄒㄩㄝˊ", "生": "ㄕㄥ",
+    "老": "ㄌㄠˇ", "師": "ㄕ", "朋": "ㄆㄥˊ", "友": "ㄧㄡˇ", "電": "ㄉㄧㄢˋ", "腦": "ㄋㄠˇ",
+    "台": "ㄊㄞˊ", "灣": "ㄨㄢ", "國": "ㄍㄨㄛˊ", "手": "ㄕㄡˇ", "機": "ㄐㄧ", "天": "ㄊㄧㄢ",
+    "氣": "ㄑㄧˋ", "時": "ㄕˊ", "間": "ㄐㄧㄢ", "快": "ㄎㄨㄞˋ", "樂": "ㄌㄜˋ", "喜": "ㄒㄧˇ",
+    "歡": "ㄏㄨㄢ", "工": "ㄍㄨㄥ", "作": "ㄗㄨㄛˋ", "嗎": "ㄇㄚ˙", "我": "ㄨㄛˇ", "是": "ㄕˋ",
+    "很": "ㄏㄣˇ", "難": "ㄋㄢˊ", "今": "ㄐㄧㄣ", "愛": "ㄞˋ", "祝": "ㄓㄨˋ", "幾": "ㄐㄧˇ",
+    "點": "ㄉㄧㄢˇ", "了": "ㄌㄜ˙", "的": "ㄉㄜ˙", "和": "ㄏㄢˋ", "都": "ㄉㄡ", "用": "ㄩㄥˋ",
+    "日": "ㄖˋ", "上": "ㄕㄤˋ", "現": "ㄒㄧㄢˋ", "在": "ㄗㄞˋ"
+  };
+
+  /* ============================ Content pools ============================ */
+  const EN_POOL = {
+    easy: [
+      "the quick brown fox jumps over the lazy dog",
+      "she sells seashells by the seashore",
+      "practice makes perfect every single day",
+      "i like to read books in the sun",
+      "cats and dogs are common pets"
+    ],
+    medium: [
+      "the five boxing wizards jump quickly to finish the job",
+      "programming is the art of solving problems with code",
+      "a journey of a thousand miles begins with a single step",
+      "typing fast requires patience, practice, and focus every day",
+      "the weather today is sunny with a gentle breeze from the sea"
+    ],
+    hard: [
+      "amazingly few discotheques provide jukeboxes for quiet nights",
+      "success is not final, failure is not fatal, it is the courage to continue that counts",
+      "in the middle of every difficulty lies an opportunity waiting to be discovered",
+      "the only way to do great work is to love what you do, so keep typing",
+      "consistency and patience will turn ordinary practice into extraordinary skill"
+    ]
+  };
+
+  const ZH_POOL = {
+    easy: ["你好", "謝謝", "早安", "晚安", "再見", "中文", "學生", "老師", "朋友", "電腦"],
+    medium: ["台灣中國", "手機電腦", "天氣時間", "生日快樂", "喜歡工作", "你好嗎", "謝謝你", "我是學生", "中文很難", "早上好"],
+    hard: ["今天天氣很好", "我愛你中文", "祝你生日快樂", "現在幾點了", "謝謝你的朋友", "中文老師很好", "我喜歡學中文", "電腦和手機都好用"]
+  };
+
+  /* ============================ Keyboard layout ============================ */
+  const ROWS = [
+    ["`", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "=", "Backspace"],
+    ["Tab", "q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "[", "]", "\\"],
+    ["CapsLock", "a", "s", "d", "f", "g", "h", "j", "k", "l", ";", "'", "Enter"],
+    ["ShiftLeft", "z", "x", "c", "v", "b", "n", "m", ",", ".", "/", "ShiftRight"],
+    [" "]
+  ];
+  const KEY_WIDTH = { "Backspace": 2, "Tab": 1.5, "CapsLock": 1.8, "Enter": 2.2, "ShiftLeft": 2.4, "ShiftRight": 2.4, " ": 8 };
+  const SPECIAL_LABEL = { "Backspace": "⌫", "Tab": "Tab", "CapsLock": "Caps", "Enter": "Enter", "ShiftLeft": "Shift", "ShiftRight": "Shift", " ": "Space" };
+  const SPECIAL_IDS = new Set(["Backspace", "Tab", "CapsLock", "Enter", "ShiftLeft", "ShiftRight"]);
+
+  /* ============================ State ============================ */
+  let mode = "en";
+  let difficulty = "easy";
+  let session = null;
+  let timerInterval = null;
+  const keyElements = new Map();
+  const pressTimeouts = new Map();
+
+  /* ============================ DOM refs ============================ */
+  const $ = (id) => document.getElementById(id);
+  const keyboardEl = $("keyboard");
+  const targetTextEl = $("targetText");
+  const placeholderEl = $("placeholder");
+  const resultBannerEl = $("resultBanner");
+  const startBtn = $("startBtn");
+  const restartBtn = $("restartBtn");
+  const pauseBtn = $("pauseBtn");
+  const statTime = $("statTime");
+  const statSpeed = $("statSpeed");
+  const statSpeedLabel = $("statSpeedLabel");
+  const statAccuracy = $("statAccuracy");
+  const glowSlider = $("glowSlider");
+  const glowValue = $("glowValue");
+  const themeToggle = $("themeToggle");
+  const modeSwitch = $("modeSwitch");
+  const difficultySwitch = $("difficultySwitch");
+
+  /* ============================ Keyboard rendering ============================ */
+  function keyLabel(keyId) {
+    if (SPECIAL_IDS.has(keyId)) return { main: SPECIAL_LABEL[keyId], sub: null, special: true };
+    if (keyId === " ") return { main: "Space", sub: null, special: true };
+    if (mode === "zh" && KEY_TO_ZHUYIN[keyId] && keyId !== " ") {
+      return { main: KEY_TO_ZHUYIN[keyId], sub: keyId.toUpperCase(), special: false };
+    }
+    return { main: keyId.toUpperCase(), sub: null, special: false };
+  }
+
+  function renderKeyboard() {
+    keyboardEl.innerHTML = "";
+    keyElements.clear();
+    ROWS.forEach((row) => {
+      const rowEl = document.createElement("div");
+      rowEl.className = "kb-row";
+      row.forEach((keyId) => {
+        const { main, sub, special } = keyLabel(keyId);
+        const btn = document.createElement("div");
+        btn.className = "key" + (special ? " special" : "");
+        btn.style.flexGrow = String(KEY_WIDTH[keyId] || 1);
+        btn.dataset.keyid = keyId;
+        const mainEl = document.createElement("div");
+        mainEl.className = "main";
+        mainEl.textContent = main;
+        btn.appendChild(mainEl);
+        if (sub) {
+          const subEl = document.createElement("div");
+          subEl.className = "sub";
+          subEl.textContent = sub;
+          btn.appendChild(subEl);
+        }
+        rowEl.appendChild(btn);
+        keyElements.set(keyId, btn);
+      });
+      keyboardEl.appendChild(rowEl);
+    });
+  }
+
+  function getEventKeyId(e) {
+    if (SPECIAL_IDS.has(e.code)) return e.code;
+    if (e.code === "Space") return " ";
+    if (e.key.length === 1) return e.key.toLowerCase();
+    return null;
+  }
+
+  function glowKey(keyId) {
+    const el = keyElements.get(keyId);
+    if (!el) return;
+    el.classList.add("pressed");
+    if (pressTimeouts.has(keyId)) clearTimeout(pressTimeouts.get(keyId));
+    pressTimeouts.set(keyId, setTimeout(() => el.classList.remove("pressed"), KEY_GLOW_DURATION_MS));
+  }
+
+  function flashWrongKey(keyId) {
+    const el = keyElements.get(keyId);
+    if (!el) return;
+    el.classList.add("wrong-flash");
+    setTimeout(() => el.classList.remove("wrong-flash"), 220);
+  }
+
+  function setNextKeyHighlight(keyId) {
+    keyElements.forEach((el) => el.classList.remove("next-key"));
+    if (keyId != null) {
+      const el = keyElements.get(keyId);
+      if (el) el.classList.add("next-key");
+    }
+  }
+
+  /* ============================ Session building ============================ */
+  function pickText() {
+    const pool = mode === "en" ? EN_POOL[difficulty] : ZH_POOL[difficulty];
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  function buildUnitsEnglish(text) {
+    return text.split("").map((ch) => ({ expectedKey: ch === " " ? " " : ch.toLowerCase(), display: ch }));
+  }
+
+  function buildUnitsChinese(text) {
+    const units = [];
+    const blocks = [];
+    text.split("").forEach((ch) => {
+      const zhuyin = CHAR_ZHUYIN[ch] || "";
+      const symbols = zhuyin.split("");
+      const start = units.length;
+      symbols.forEach((sym) => {
+        units.push({ expectedKey: ZHUYIN_TO_KEY[sym] || sym, display: sym, blockIndex: blocks.length });
+      });
+      blocks.push({ char: ch, start, end: units.length });
+    });
+    return { units, blocks };
+  }
+
+  function createSession(text) {
+    const base = { text, pointer: 0, correct: 0, incorrect: 0, startTime: Date.now(), pausedDuration: 0, running: true, paused: false, finished: false };
+    if (mode === "en") {
+      base.units = buildUnitsEnglish(text);
+      base.blocks = null;
+    } else {
+      const { units, blocks } = buildUnitsChinese(text);
+      base.units = units;
+      base.blocks = blocks;
+    }
+    return base;
+  }
+
+  /* ============================ Rendering target text ============================ */
+  function renderTargetText() {
+    targetTextEl.innerHTML = "";
+    resultBannerEl.style.display = "none";
+    placeholderEl.style.display = "none";
+    if (!session) return;
+
+    session.unitEls = [];
+
+    if (mode === "en") {
+      session.units.forEach((unit) => {
+        const span = document.createElement("span");
+        span.className = "char-unit" + (unit.display === " " ? " space" : "");
+        span.textContent = unit.display;
+        targetTextEl.appendChild(span);
+        session.unitEls.push(span);
+      });
+    } else {
+      session.blockEls = [];
+      session.blocks.forEach((block) => {
+        const blockEl = document.createElement("div");
+        blockEl.className = "zh-block";
+        const symbolsEl = document.createElement("div");
+        symbolsEl.className = "zh-symbols";
+        for (let i = block.start; i < block.end; i++) {
+          const symEl = document.createElement("span");
+          symEl.className = "zh-symbol";
+          symEl.textContent = session.units[i].display;
+          symbolsEl.appendChild(symEl);
+          session.unitEls.push(symEl);
+        }
+        const charEl = document.createElement("div");
+        charEl.className = "zh-char";
+        charEl.textContent = block.char;
+        blockEl.appendChild(symbolsEl);
+        blockEl.appendChild(charEl);
+        targetTextEl.appendChild(blockEl);
+        session.blockEls.push(blockEl);
+      });
+    }
+    updateHighlight();
+  }
+
+  function updateHighlight() {
+    if (!session) return;
+    session.unitEls.forEach((el, i) => {
+      el.classList.remove("correct", "active");
+      if (i < session.pointer) el.classList.add("correct");
+      else if (i === session.pointer) el.classList.add("active");
+    });
+    if (mode === "zh" && session.blockEls) {
+      session.blocks.forEach((block, i) => {
+        const el = session.blockEls[i];
+        const done = session.pointer >= block.end;
+        const current = session.pointer >= block.start && session.pointer < block.end;
+        el.classList.toggle("block-done", done);
+        el.classList.toggle("block-current", current);
+      });
+    }
+    const nextUnit = session.units[session.pointer];
+    setNextKeyHighlight(nextUnit ? nextUnit.expectedKey : null);
+  }
+
+  function flashError() {
+    const el = session.unitEls[session.pointer];
+    if (el) {
+      el.classList.add("wrong-flash");
+      setTimeout(() => el && el.classList.remove("wrong-flash"), 220);
+    }
+    const unit = session.units[session.pointer];
+    if (unit) flashWrongKey(unit.expectedKey);
+  }
+
+  /* ============================ Stats ============================ */
+  function formatTime(sec) {
+    const m = Math.floor(sec / 60).toString().padStart(2, "0");
+    const s = Math.floor(sec % 60).toString().padStart(2, "0");
+    return `${m}:${s}`;
+  }
+
+  function updateStats() {
+    if (!session) return;
+    const elapsedMs = Date.now() - session.startTime - session.pausedDuration;
+    const elapsedSec = Math.max(0, elapsedMs / 1000);
+    statTime.textContent = formatTime(elapsedSec);
+
+    const attempts = session.correct + session.incorrect;
+    const accuracy = attempts === 0 ? 100 : Math.round((session.correct / attempts) * 100);
+    statAccuracy.textContent = `${accuracy}%`;
+
+    const minutes = elapsedSec / 60 || (1 / 60);
+    if (mode === "en") {
+      statSpeedLabel.textContent = "WPM";
+      statSpeed.textContent = Math.round((session.correct / 5) / minutes);
+    } else {
+      statSpeedLabel.textContent = "CPM";
+      const completedChars = session.blocks ? session.blocks.filter((b) => session.pointer >= b.end).length : 0;
+      statSpeed.textContent = Math.round(completedChars / minutes);
+    }
+  }
+
+  /* ============================ Game flow ============================ */
+  function resetToIdle() {
+    stopTimer();
+    session = null;
+    targetTextEl.innerHTML = "";
+    placeholderEl.style.display = "block";
+    resultBannerEl.style.display = "none";
+    statTime.textContent = "00:00";
+    statSpeed.textContent = "0";
+    statSpeedLabel.textContent = mode === "en" ? "WPM" : "CPM";
+    statAccuracy.textContent = "100%";
+    restartBtn.disabled = true;
+    pauseBtn.disabled = true;
+    pauseBtn.textContent = "⏸ Pause";
+    setNextKeyHighlight(null);
+  }
+
+  function startTimer() {
+    stopTimer();
+    timerInterval = setInterval(updateStats, 250);
+  }
+  function stopTimer() {
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = null;
+  }
+
+  function startSession(reuseText) {
+    const text = reuseText || pickText();
+    session = createSession(text);
+    renderTargetText();
+    updateStats();
+    startTimer();
+    restartBtn.disabled = false;
+    pauseBtn.disabled = false;
+    pauseBtn.textContent = "⏸ Pause";
+  }
+
+  function finishSession() {
+    session.running = false;
+    session.finished = true;
+    stopTimer();
+    updateStats();
+    resultBannerEl.style.display = "block";
+    resultBannerEl.textContent = `🎉 Completed! ${statSpeedLabel.textContent}: ${statSpeed.textContent} · Accuracy: ${statAccuracy.textContent} · Time: ${statTime.textContent}`;
+    pauseBtn.disabled = true;
+    setNextKeyHighlight(null);
+  }
+
+  function togglePause() {
+    if (!session || session.finished) return;
+    session.paused = !session.paused;
+    if (session.paused) {
+      stopTimer();
+      session.pauseStart = Date.now();
+      pauseBtn.textContent = "▶ Resume";
+    } else {
+      session.pausedDuration += Date.now() - session.pauseStart;
+      startTimer();
+      pauseBtn.textContent = "⏸ Pause";
+    }
+  }
+
+  /* ============================ Input handling ============================ */
+  function isFormControlFocused() {
+    const el = document.activeElement;
+    return el && ["INPUT", "SELECT", "TEXTAREA"].includes(el.tagName);
+  }
+
+  window.addEventListener("keydown", (e) => {
+    if (isFormControlFocused()) return;
+    const keyId = getEventKeyId(e);
+    if (keyId != null) glowKey(keyId);
+
+    if (!session || !session.running || session.paused || session.finished) return;
+    if (keyId == null) return;
+
+    if (keyId === " " || (keyId.length === 1 && keyId !== "Backspace")) {
+      e.preventDefault();
+    }
+
+    const unit = session.units[session.pointer];
+    if (!unit) return;
+
+    if (keyId === unit.expectedKey) {
+      session.correct++;
+      session.pointer++;
+      updateHighlight();
+      updateStats();
+      if (session.pointer >= session.units.length) finishSession();
+    } else {
+      session.incorrect++;
+      flashError();
+      updateStats();
+    }
+  });
+
+  /* ============================ UI wiring ============================ */
+  modeSwitch.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-mode]");
+    if (!btn) return;
+    mode = btn.dataset.mode;
+    [...modeSwitch.children].forEach((b) => b.classList.toggle("active", b === btn));
+    renderKeyboard();
+    resetToIdle();
+  });
+
+  difficultySwitch.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-difficulty]");
+    if (!btn) return;
+    difficulty = btn.dataset.difficulty;
+    [...difficultySwitch.children].forEach((b) => b.classList.toggle("active", b === btn));
+    resetToIdle();
+  });
+
+  glowSlider.addEventListener("input", () => {
+    KEY_GLOW_DURATION_MS = Number(glowSlider.value);
+    glowValue.textContent = `${KEY_GLOW_DURATION_MS}ms`;
+  });
+
+  themeToggle.addEventListener("click", () => {
+    const html = document.documentElement;
+    const next = html.dataset.theme === "dark" ? "light" : "dark";
+    html.dataset.theme = next;
+    themeToggle.textContent = next === "dark" ? "🌙" : "☀️";
+  });
+
+  startBtn.addEventListener("click", () => startSession());
+  restartBtn.addEventListener("click", () => { if (session) startSession(session.text); });
+  pauseBtn.addEventListener("click", togglePause);
+
+  /* ============================ Init ============================ */
+  renderKeyboard();
+  resetToIdle();
+})();
+</script>
+</body>
+</html>
