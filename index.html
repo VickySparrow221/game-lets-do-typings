@@ -591,6 +591,10 @@
         <button class="btn secondary" id="arcadeRestartBtn" disabled>⟲ Restart</button>
         <button class="btn secondary" id="arcadePauseBtn" disabled>⏸ Pause</button>
       </div>
+      <div class="group">
+        <label for="arcadeSpeedSlider">Fall Speed: <span id="arcadeSpeedValue">1.0x</span></label>
+        <input type="range" id="arcadeSpeedSlider" min="0.1" max="2.0" step="0.1" value="1">
+      </div>
       <div class="stats">
         <div class="stat"><div class="value" id="arcadeScore">0</div><div class="label">Score</div></div>
         <div class="stat"><div class="value" id="arcadeCombo">x0</div><div class="label">Combo</div></div>
@@ -683,6 +687,8 @@
   const arcadeFinalStatsEl = $("arcadeFinalStats");
   const arcadePlayAgainBtn = $("arcadePlayAgainBtn");
   const arcadeHomeBtn = $("arcadeHomeBtn");
+  const arcadeSpeedSlider = $("arcadeSpeedSlider");
+  const arcadeSpeedValue = $("arcadeSpeedValue");
 
   /* ============================ Keyboard rendering ============================ */
   function keyLabel(keyId) {
@@ -1011,6 +1017,7 @@
   };
   const ARCADE_DIFFICULTY_MULT = { easy: 1, medium: 1.5, hard: 2 };
   let arcadeWordSeq = 0;
+  let arcadeSpeedMultiplier = 1; // fall-speed multiplier, editable via slider, applies live to falling words
 
   function getEnglishWordBank(diff) {
     const words = new Set();
@@ -1064,9 +1071,10 @@
     el.style.top = "-40px";
     arcadeFieldEl.appendChild(el);
 
+    const baseFactor = 0.9 + Math.random() * 0.2;
     arcade.words.set(id, {
       id, el, blocks, units: data.units, pointer: 0,
-      y: -40, speed: arcade.config.fallSpeed * (0.9 + Math.random() * 0.2)
+      y: -40, baseFactor, speed: arcade.config.fallSpeed * arcadeSpeedMultiplier * baseFactor
     });
   }
 
@@ -1308,6 +1316,12 @@
     const next = html.dataset.theme === "dark" ? "light" : "dark";
     html.dataset.theme = next;
     themeToggle.textContent = next === "dark" ? "🌙" : "☀️";
+  });
+
+  arcadeSpeedSlider.addEventListener("input", () => {
+    arcadeSpeedMultiplier = Number(arcadeSpeedSlider.value);
+    arcadeSpeedValue.textContent = `${arcadeSpeedMultiplier.toFixed(1)}x`;
+    if (arcade) arcade.words.forEach((w) => { w.speed = arcade.config.fallSpeed * arcadeSpeedMultiplier * w.baseFactor; });
   });
 
   homeBtn.addEventListener("click", () => showScreen("home"));
